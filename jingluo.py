@@ -2,7 +2,7 @@
 Author: Adam XL Wang
 Date: 2021-10-02 17:11:08
 LastEditors: Please set LastEditors
-LastEditTime: 2021-11-06 12:12:00
+LastEditTime: 2021-11-06 15:19:27
 FilePath: /yijyun-jupyter/jingluo.py
 '''
 import matplotlib.pyplot as plt
@@ -27,16 +27,8 @@ def cut(x: np.ndarray):
 
 
 def padding(x: np.ndarray):
-    while len(x) < 10983:
-        x2 = np.zeros(len(x) * 2 - 1)
-        print(len(x2))
-        for i in range(len(x2)):
-            if i % 2 == 0:
-                x2[i] = x[int(i / 2)]
-            else:
-                j = i / 2
-                x2[i] = np.mean([x[int(np.floor(j))], x[int(np.ceil(j))]])
-        x = x2
+    if len(x) < 10983:
+        x = np.concatenate([[0] * (10983 - len(x) + 1), x])
     return x
 
 
@@ -59,7 +51,6 @@ def analyze(x: np.ndarray, param: np.ndarray = [1, 1], m: int = 8):
     # 预处理
     x = cut(x)
     locs = find_troughs(x)  # 寻找谷底索引
-    print(locs)
 
     # 画图测试
     matplotlib.use('Agg')
@@ -72,20 +63,18 @@ def analyze(x: np.ndarray, param: np.ndarray = [1, 1], m: int = 8):
 
     # 根据标准幅值比例拟合并预测结果
     standard_amp_ratios, standars_phases = get_standards()
-    return compare(amp_means,
-                   standard_amp_ratios), compare(phase_means,
-                                                 standars_phases,
-                                                 matching=False)  # 预测结果
+    return compare(
+        amp_means,
+        standard_amp_ratios,
+    ), compare(
+        phase_means,
+        standars_phases,
+    )  # 预测结果
 
 
 def compare(x, standards, matching=True):
     # 暂时忽略第一经络心包经
-    x = x[1:8]
-    standards = standards[1:8]
-    print(len(x), x)
-    print(len(standards), standards)
-    x = match(x, standards)
-    return [0] + list((x - standards) * 100 / standards)  # 默认心包经差异为0
+    return list((x - standards) * 100 / standards)  # 默认心包经差异为0
 
 
 def get_standards():
@@ -157,14 +146,14 @@ def compute(x: np.ndarray, locs: np.ndarray, m: int = 8):
     amps = amps[1:, :]
     phases = phases[1:, :]
 
-    writer = pd.ExcelWriter('jingluo-fft.xlsx')
-    pd.DataFrame(amps).to_excel(writer, sheet_name='amps', index=False)
-    pd.DataFrame(phases).to_excel(writer, sheet_name='phases', index=False)
-    writer.save()
+    # writer = pd.ExcelWriter('jingluo-fft.xlsx')
+    # pd.DataFrame(amps).to_excel(writer, sheet_name='amps', index=False)
+    # pd.DataFrame(phases).to_excel(writer, sheet_name='phases', index=False)
+    # writer.save()
 
-    amp_means = np.mean(amps, axis=0)  # 幅值平均
-    phase_means = np.mean(phases, axis=0)  # 相位平均
-    return amp_means, phase_means
+    # amp_means = np.mean(amps, axis=0)  # 幅值平均
+    # phase_means = np.mean(phases, axis=0)  # 相位平均
+    return amps, phases
 
 
 def select_ratio(param: np.ndarray):
